@@ -3,11 +3,13 @@ package com.jaen.comandapp.modelo;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.Serializable;
+
 /**
- * Created by jaenx on 23/08/2017.
+ * Created by jaen on 23/08/2017.
  */
 
-public class Pedido {
+public class Pedido implements Serializable{
 
     private String id;
     private String id_mesa;
@@ -23,25 +25,6 @@ public class Pedido {
         this.pagado = pagado;
         this.estado = estado;
         this.id_user = id_user;
-    }
-
-    public Pedido() {}
-
-    /**
-     * Constructor jsonObject
-     * @param jsonObject
-     */
-    public Pedido(JSONObject jsonObject) {
-        try {
-            this.id = jsonObject.getString("id");
-            this.id_mesa = jsonObject.getString("id_mesa");
-            this.fecha = jsonObject.getString("fecha");
-            this.pagado = jsonObject.getString("pagado");
-            this.estado = jsonObject.getString("estado");
-            this.id_user = jsonObject.getString("id_user");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
     }
 
     public String getId() {

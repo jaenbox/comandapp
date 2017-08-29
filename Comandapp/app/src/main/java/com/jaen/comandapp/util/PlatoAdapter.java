@@ -1,9 +1,7 @@
 package com.jaen.comandapp.util;
 
-import android.app.Activity;
 import android.content.Context;
 import android.os.AsyncTask;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,71 +15,42 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
-import com.jaen.comandapp.MainActivity;
 import com.jaen.comandapp.R;
 import com.jaen.comandapp.modelo.Plato;
-import com.jaen.comandapp.util.VolleySingleton;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static android.support.v7.widget.RecyclerView.*;
-
 /**
- * Created by jaenx on 23/08/2017.
+ * Created by jaen on 23/08/2017.
  */
 
 public class PlatoAdapter extends ArrayAdapter {
 
-
     // Atributos
-    private RequestQueue requestQueue;
     JsonObjectRequest jsArrayRequest;
     private static final String URL_BASE = "http://192.168.1.5";
     private static final String URL_PLATOS = "/webservicecomandas/obtener_platos.php";
-    private static final String TAG = "PostAdapter";
     List<Plato> items;
 
 
     public PlatoAdapter(Context context) {
         super(context, 0);
-
-        // cola de peticiones
-        requestQueue = Volley.newRequestQueue(context);
-
-        // Nueva petición JSONObject
-        jsArrayRequest = new JsonObjectRequest(
-                Request.Method.GET,
-                URL_BASE + URL_PLATOS,
-                (String)null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        items = parseJson(response);
-                        notifyDataSetChanged();
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.d(TAG, "Error Respuesta en JSON: " + error.getMessage());
-
-                    }
-                }
-        );
-
-        // Añadir petición a la cola
-        VolleySingleton.getInstance(context).addToRequestQueue(jsArrayRequest);
+        new GetPlatos().execute();  // se lanza metodo Asyntask
     }
 
     @Override
     public int getCount() {
         return items != null ? items.size() : 0;
+    }
+
+    @Override
+    public Object getItem(int position) {
+        return items.get(position);
     }
 
     @Override
@@ -92,7 +61,7 @@ public class PlatoAdapter extends ArrayAdapter {
         View listItemView;
 
         listItemView = null == convertView ? layoutInflater.inflate(
-                R.layout.item_list,
+                R.layout.item_plato_list,
                 parent,
                 false) : convertView;
 
@@ -109,49 +78,73 @@ public class PlatoAdapter extends ArrayAdapter {
         return listItemView;
     }
 
-
-    public List<Plato> parseJson(JSONObject jsonObject){
-        // Variables locales
-        List<Plato> platos = new ArrayList<>();
-        JSONArray jsonArray= null;
-
-        try {
-            // Obtener el array del objeto
-            jsonArray = jsonObject.getJSONArray("platos");
-
-            for(int i=0; i<jsonArray.length(); i++){
-
-                try {
-                    JSONObject objeto= jsonArray.getJSONObject(i);
-
-                    Plato plato = new Plato(
-                            objeto.getString("id"),
-                            objeto.getString("name"),
-                            objeto.getString("price"),
-                            objeto.getString("description"),
-                            objeto.getString("category"));
-
-                    platos.add(plato);
-
-                } catch (JSONException e) {
-                    Log.e(TAG, "Error de parsing: "+ e.getMessage());
-                }
-            }
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-
-        return platos;
-    }
-
-    private class SimpleTask extends AsyncTask<Void, Integer, Void> {
+    /* Clase AsynkTask para cargar los platos. */
+    private class GetPlatos extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected Void doInBackground(Void... voids) {
 
+            // Nueva petición JSONObject
+            jsArrayRequest = new JsonObjectRequest(
+                    Request.Method.GET,
+                    URL_BASE + URL_PLATOS,
+                    (String)null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            items = parseJson(response);
+                            notifyDataSetChanged();
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Log.d("Plato Adapter", "Error Respuesta en JSON: " + error.getMessage());
+
+                        }
+                    }
+            );
+
+            // Añadir petición a la cola
+            VolleySingleton.getInstance(PlatoAdapter.this.getContext()).addToRequestQueue(jsArrayRequest);
+
             return null;
+        }
+
+        public List<Plato> parseJson(JSONObject jsonObject){
+            // Variables locales
+            List<Plato> platos = new ArrayList<>();
+            JSONArray jsonArray= null;
+
+            try {
+                // Obtener el array del objeto
+                jsonArray = jsonObject.getJSONArray("platos");
+
+                for(int i=0; i<jsonArray.length(); i++){
+
+                    try {
+                        JSONObject objeto= jsonArray.getJSONObject(i);
+
+                        Plato plato = new Plato(
+                                objeto.getString("id"),
+                                objeto.getString("name"),
+                                objeto.getString("price"),
+                                objeto.getString("description"),
+                                objeto.getString("category"));
+
+                        platos.add(plato);
+
+                    } catch (JSONException e) {
+                        Log.e("Plato Adapter", "Error de parsing: "+ e.getMessage());
+                    }
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+
+            return platos;
         }
     }
 

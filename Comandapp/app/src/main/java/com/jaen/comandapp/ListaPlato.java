@@ -5,7 +5,7 @@ import com.jaen.comandapp.modelo.Plato;
 import java.util.List;
 
 /**
- * Created by jaenx on 23/08/2017.
+ * Created by jaen on 23/08/2017.
  */
 
 public class ListaPlato {

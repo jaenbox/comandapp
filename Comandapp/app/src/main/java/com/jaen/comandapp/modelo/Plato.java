@@ -4,7 +4,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Created by jaenx on 23/08/2017.
+ * Created by jaen on 23/08/2017.
  */
 
 public class Plato {
@@ -14,8 +14,6 @@ public class Plato {
     private String description;
     private String category;
 
-    public Plato() {}
-
     public Plato(String id, String name, String price, String description, String category) {
 
         this.id = id;
@@ -23,22 +21,6 @@ public class Plato {
         this.price = price;
         this.description = description;
         this.category = category;
-    }
-
-    /**
-     * Constructor jsonObject
-     * @param jsonObject
-     */
-    public Plato(JSONObject jsonObject) {
-        try {
-            this.id = jsonObject.getString("id");
-            this.name = jsonObject.getString("name");
-            this.price = jsonObject.getString("price");
-            this.description = jsonObject.getString("description");
-            this.category = jsonObject.getString("category");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
     }
 
     public String getId() {

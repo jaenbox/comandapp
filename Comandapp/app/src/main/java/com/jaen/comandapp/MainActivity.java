@@ -1,42 +1,34 @@
 package com.jaen.comandapp;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
+import com.jaen.comandapp.modelo.Pedido;
+import com.jaen.comandapp.util.PedidoAdapter;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-import com.jaen.comandapp.modelo.Plato;
-import com.jaen.comandapp.util.PlatoAdapter;
-import com.jaen.comandapp.util.VolleySingleton;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     ListView listView;
     ArrayAdapter adapter;
     FloatingActionButton fabAddComanda;
+    String id_camarero;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Id del usuario logueado en app.
+        SharedPreferences sharedPref = getSharedPreferences("datos", Context.MODE_PRIVATE);
+        id_camarero = sharedPref.getString("id_camarero", "");
 
         fabAddComanda = (FloatingActionButton) findViewById(R.id.fabAddComanda);
         listView = (ListView) findViewById(R.id.listView);
@@ -44,9 +36,12 @@ public class MainActivity extends AppCompatActivity {
         // Listener listView mostrar pedido.
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                int position = i;
-                Log.d("Valor itemValue ", String.valueOf(position));
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                // Recogemos el objeto seleccionado en listView y lo pasamos con intent a PedidoActivity
+                Pedido pedido = (Pedido) adapter.getItem(position);
+                Intent intent = new Intent(MainActivity.this, PedidoActivity.class );
+                intent.putExtra("pedido", pedido);
+                startActivity(intent);
             }
         });
 
@@ -54,18 +49,55 @@ public class MainActivity extends AppCompatActivity {
         fabAddComanda.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.v("MainActivity: ", "Se presiono el fabAddComanda");
+                Intent intent = new Intent(MainActivity.this, ComandaActivity.class);
+                startActivity(intent);
             }
         });
 
         // Adapter
-        adapter = new PlatoAdapter(this);
+        adapter = new PedidoAdapter(this, id_camarero);
         listView.setAdapter(adapter);
 
     }
 
+    @Override
+    public void onResume(){
+        super.onResume();
 
+        setContentView(R.layout.activity_main);
 
+        // Id del usuario logueado en app.
+        SharedPreferences sharedPref = getSharedPreferences("datos", Context.MODE_PRIVATE);
+        id_camarero = sharedPref.getString("id_camarero", "");
+
+        fabAddComanda = (FloatingActionButton) findViewById(R.id.fabAddComanda);
+        listView = (ListView) findViewById(R.id.listView);
+
+        // Listener listView mostrar pedido.
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                // Recogemos el objeto seleccionado en listView y lo pasamos con intent a PedidoActivity
+                Pedido pedido = (Pedido) adapter.getItem(position);
+                Intent intent = new Intent(MainActivity.this, PedidoActivity.class );
+                intent.putExtra("pedido", pedido);
+                startActivityForResult(intent, 0);
+            }
+        });
+
+        // Listener fab
+        fabAddComanda.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, ComandaActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        // Adapter
+        adapter = new PedidoAdapter(this, id_camarero);
+        listView.setAdapter(adapter);
+    }
 
 
 }

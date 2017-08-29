@@ -1,7 +1,8 @@
 package com.jaen.comandapp;
 
+import android.content.Context;
 import android.content.Intent;
-import android.support.annotation.IntegerRes;
+import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,9 +18,6 @@ import java.net.URL;
 import java.util.Scanner;
 
 
-/**
- * A login screen that offers login via email/password.
- */
 public class LoginActivity extends AppCompatActivity {
 
     // UI references.
@@ -51,8 +49,13 @@ public class LoginActivity extends AppCompatActivity {
                                 // Comprobar la respuesta del WebService
                                 if(isNumeric(res)) {
                                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                                    Log.v("ID camarero Intent", res);   // verifica que camarero accede.
-                                    intent.putExtra("camarero: ", res); // enviamos el id del camarero.
+
+                                    // Alamcenar en preferencias el id_camarero.
+                                    SharedPreferences sharedPref = getSharedPreferences("datos", Context.MODE_PRIVATE);
+                                    SharedPreferences.Editor editor = sharedPref.edit();
+                                    editor.putString("id_camarero", res);
+                                    editor.commit();
+
                                     startActivity(intent);
                                 } else {
                                     Toast.makeText(getApplicationContext(), "Usuario o password incorrectos", Toast.LENGTH_LONG).show();
