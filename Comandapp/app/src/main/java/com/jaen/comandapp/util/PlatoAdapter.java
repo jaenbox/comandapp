@@ -33,14 +33,18 @@ public class PlatoAdapter extends ArrayAdapter {
 
     // Atributos
     JsonObjectRequest jsArrayRequest;
-    private static final String URL_BASE = "http://192.168.1.5";
-    private static final String URL_PLATOS = "/webservicecomandas/obtener_platos.php";
+    private static final String URL_BASE = "http://";
+    private static final String URL_PLATOS = "/api/v1/obtener_platos.php";
+
+
     List<Plato> items;
+    String ip_servidor;
 
-
-    public PlatoAdapter(Context context) {
+    public PlatoAdapter(Context context, String ip_servidor) {
         super(context, 0);
+        this.ip_servidor = ip_servidor;
         new GetPlatos().execute();  // se lanza metodo Asyntask
+
     }
 
     @Override
@@ -87,7 +91,7 @@ public class PlatoAdapter extends ArrayAdapter {
             // Nueva petición JSONObject
             jsArrayRequest = new JsonObjectRequest(
                     Request.Method.GET,
-                    URL_BASE + URL_PLATOS,
+                    URL_BASE + ip_servidor + URL_PLATOS,
                     (String)null,
                     new Response.Listener<JSONObject>() {
                         @Override

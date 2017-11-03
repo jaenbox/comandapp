@@ -31,16 +31,20 @@ public class PedidoAdapter extends ArrayAdapter {
 
     // Atributos
     JsonObjectRequest jsArrayRequest;
-    private static final String URL_BASE = "http://192.168.1.5";
-    private String URL_PLATOS = "/webservicecomandas/obtener_pedidos.php?user=";
+    private static final String URL_BASE = "http://";
+    private String URL_PEDIDOS = "/api/v1/obtener_pedidos.php?user=";
+
     List<Pedido> items;
     String id_camarero;
+    String ip_servidor;
 
-    public PedidoAdapter(Context context, String id_camarero) {
+    public PedidoAdapter(Context context, String id_camarero, String ip_servidor) {
         super(context, 0);
         // Pasamos al adapter el usuario logueado.
         this.id_camarero = id_camarero;
-        URL_PLATOS +=id_camarero;
+        this.ip_servidor = ip_servidor;
+
+        URL_PEDIDOS +=id_camarero;
 
         new GetPedidos().execute();
     }
@@ -91,7 +95,7 @@ public class PedidoAdapter extends ArrayAdapter {
             // Nueva petición JSONObject
             jsArrayRequest = new JsonObjectRequest(
                     Request.Method.GET,
-                    URL_BASE + URL_PLATOS,
+                    URL_BASE + ip_servidor + URL_PEDIDOS,
                     (String)null,
                     new Response.Listener<JSONObject>() {
                         @Override

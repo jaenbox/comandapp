@@ -23,45 +23,57 @@ public class LoginActivity extends AppCompatActivity {
     // UI references.
     private EditText etUser;
     private EditText etPassword;
+    private EditText etIp;
     private Button btnSignin;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         // Set up the login form.
         etUser = (AutoCompleteTextView) findViewById(R.id.etUser);
         etPassword = (EditText) findViewById(R.id.etPassword);
+        etIp = (EditText) findViewById(R.id.etIP);
         btnSignin = (Button) findViewById(R.id.btnSignin);
 
         btnSignin.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View view) {
+
                 Thread thread = new Thread(){
                     @Override
                     public void run() {
-                        final String res = enviarPost(etUser.getText().toString(), etPassword.getText().toString());
+                        if (etUser.getText().toString() == "" | etPassword.getText().toString() == "" | etIp.getText().toString() == "") {
+                            Toast.makeText(getApplicationContext(), "Es necesario rellenar todos los campos", Toast.LENGTH_LONG).show();
+                        } else {
 
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                // Comprobar la respuesta del WebService
-                                if(isNumeric(res)) {
-                                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                            final String res = enviarPost(etUser.getText().toString(), etPassword.getText().toString());
 
-                                    // Alamcenar en preferencias el id_camarero.
-                                    SharedPreferences sharedPref = getSharedPreferences("datos", Context.MODE_PRIVATE);
-                                    SharedPreferences.Editor editor = sharedPref.edit();
-                                    editor.putString("id_camarero", res);
-                                    editor.commit();
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
 
-                                    startActivity(intent);
-                                } else {
-                                    Toast.makeText(getApplicationContext(), "Usuario o password incorrectos", Toast.LENGTH_LONG).show();
+                                    // Comprobar la respuesta del WebService
+
+                                    if(isNumeric(res)) {
+                                        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+
+                                        // Alamcenar en preferencias el id_camarero.
+                                        SharedPreferences sharedPref = getSharedPreferences("datos", Context.MODE_PRIVATE);
+                                        SharedPreferences.Editor editor = sharedPref.edit();
+                                        editor.putString("id_camarero", res);
+                                        editor.putString("ip_servidor", etIp.getText().toString());
+                                        editor.commit();
+
+                                        startActivity(intent);
+                                    } else {
+                                        Toast.makeText(getApplicationContext(), "IP, usuario o password incorrectos", Toast.LENGTH_LONG).show();
+                                    }
                                 }
-                            }
-                        });
+
+                            });
+                        }
                     }
                 };
                 thread.start();
@@ -85,7 +97,9 @@ public class LoginActivity extends AppCompatActivity {
 
         try{
             // Conectar y envio de datos
-            URL url = new URL("http://192.168.1.5/WebServiceComandas/signin.php");
+            String ip = etIp.getText().toString();
+            URL url = new URL("http://" + ip + "/api/v1/signin.php");
+            Log.v("conexion lanzada a ","http://" + ip + "/api/v1/signin.php");
             connection=(HttpURLConnection)url.openConnection();
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Length", ""+Integer.toString(param.getBytes().length));
@@ -98,7 +112,7 @@ public class LoginActivity extends AppCompatActivity {
 
             // Almacena respuesta.
             Scanner scanner = new Scanner(connection.getInputStream());
-
+            Log.v("Recepcion ",scanner.toString());
             while(scanner.hasNext()) {
                 request += ( scanner.nextLine());
             }

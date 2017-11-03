@@ -3,6 +3,8 @@ package com.jaen.comandapp;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
+import android.print.PrintManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Html;
@@ -24,6 +26,7 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.jaen.comandapp.modelo.Mesa;
 import com.jaen.comandapp.modelo.Plato;
+import com.jaen.comandapp.util.MyPrintDocumentAdapter;
 import com.jaen.comandapp.util.PlatoAdapter;
 import com.jaen.comandapp.util.VolleySingleton;
 
@@ -34,24 +37,32 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
+import javax.xml.transform.Result;
+
+import static java.lang.Thread.sleep;
 
 public class ComandaActivity extends AppCompatActivity implements Spinner.OnItemSelectedListener{
 
     // Atributos
-    private static final String URL_BASE = "http://192.168.1.5";
-    private static final String URL_MESAS = "/webservicecomandas/obtener_mesas.php";
-    private static final String URL_INSERTAR = "/webservicecomandas/insertar_pedido.php";
+    private static final String URL_BASE = "http://";
+    private static final String URL_MESAS = "/api/v1/obtener_mesas.php";
+    private static final String URL_INSERTAR = "/api/v1/insertar_pedido.php";
+    private static final String URL_PEDIDO = "/api/v1/last_pedido.php?user=";
     private ArrayList<String> mesas;
     private JSONArray jsonArray;
 
     Mesa mesa;
     String id_camarero = "";
+    String ip_servidor = "";
     ListView listView;
     ArrayAdapter adapter;
     Spinner spMesas;
     EditText etComanda;
     EditText etObservaciones;
     ArrayList<Plato> platos;
+    ArrayList<String> pedido;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,9 +74,12 @@ public class ComandaActivity extends AppCompatActivity implements Spinner.OnItem
         // Id del usuario logueado en app.
         SharedPreferences sharedPref = getSharedPreferences("datos", Context.MODE_PRIVATE);
         id_camarero = sharedPref.getString("id_camarero", "");
+        ip_servidor = sharedPref.getString("ip_servidor", "");
+
         // Inicializar el ArrayList que rellena el spinner
         mesas = new ArrayList<String>();
         platos = new ArrayList<Plato>();
+        pedido = new ArrayList<>();
 
         etComanda = (EditText) findViewById(R.id.etComanda);
         spMesas = (Spinner) findViewById(R.id.spMesa);
@@ -78,7 +92,7 @@ public class ComandaActivity extends AppCompatActivity implements Spinner.OnItem
         getData();
 
         // Adapter
-        adapter = new PlatoAdapter(this);
+        adapter = new PlatoAdapter(this, ip_servidor);
         listView.setAdapter(adapter);
 
         /*Cada elemento seleccionado se almacena en el campo etComanda*/
@@ -119,7 +133,25 @@ public class ComandaActivity extends AppCompatActivity implements Spinner.OnItem
                 platos.clear(); // borramos elementos de arraylist.
                 return true;
             case R.id.action_send:
-                sendPedido();
+                /* Se ejecuta en segundo plano el envio del pedido*/
+                Log.d("Pedido ", "sendPedido");
+
+                sendPedido send = new sendPedido();
+                send.execute(etObservaciones.getText().toString());
+
+                /*Recogido del pedido una vez almacenado*/
+                /*getLastPedido();
+
+                Log.d("Pedido tam ",String.valueOf(pedido.size()));
+
+                for(int i = 0; i < pedido.size(); i++){
+                    Log.d("Pedido ",pedido.get(i));
+                }
+                /* Impresion del ticket mediante google cloud print*/
+                /*
+                doPrint print = new doPrint();
+                print.execute();
+                */
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -129,7 +161,7 @@ public class ComandaActivity extends AppCompatActivity implements Spinner.OnItem
     private void getData(){
 
         //Creating a string request
-        StringRequest stringRequest = new StringRequest(URL_BASE+URL_MESAS,
+        StringRequest stringRequest = new StringRequest(URL_BASE+ ip_servidor + URL_MESAS,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
@@ -175,6 +207,62 @@ public class ComandaActivity extends AppCompatActivity implements Spinner.OnItem
 
         //Setting adapter to show the items in the spinner
         spMesas.setAdapter(new ArrayAdapter<String>(ComandaActivity.this, android.R.layout.simple_spinner_dropdown_item, mesas));
+    }
+
+    private void getLastPedido(){
+        Log.d("Pedido ", " IN getLastPedido()");
+
+        //Creating a string request
+        StringRequest stringRequest = new StringRequest(URL_BASE + ip_servidor + URL_PEDIDO+id_camarero,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        JSONObject j = null;
+                        try {
+                            //Parsing the fetched Json String to JSON Object
+                            j = new JSONObject(response);
+
+                            //Storing the Array of JSON String to our JSON Array
+                            jsonArray = j.getJSONArray("pedido");
+                            //Calling method getStudents to get the students from the JSON Array
+                            getPedido(jsonArray);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+
+                    }
+                });
+
+        // Llamamos al método singleton Volley y añadimos a la cola la nueva petición
+        VolleySingleton.getInstance(this).addToRequestQueue(stringRequest);
+    }
+
+    private void getPedido(JSONArray j){
+        Log.d("Pedido ", "IN getPedido()");
+        //Traversing through all the items in the json array
+
+        try {
+            //Getting json object
+            JSONObject json = j.getJSONObject(0);
+            Log.d("Pedido id ", j.getJSONObject(0).getString("id_pedido"));
+            Log.d("Pedido mesa ", j.getJSONObject(0).getString("id_mesa"));
+            Log.d("Pedido fecha ", j.getJSONObject(0).getString("fecha"));
+            //Adding the name of the student to array list
+            pedido.add(json.getString("id_pedido"));
+            pedido.add(json.getString("id_mesa"));
+            pedido.add(json.getString("fecha"));
+            pedido.add(json.getString("id_user"));
+            pedido.add(json.getString("name"));
+            pedido.add(json.getString("price"));
+
+        } catch (JSONException e) {
+                e.printStackTrace();
+        }
     }
 
     private String getId(int position){
@@ -225,69 +313,83 @@ public class ComandaActivity extends AppCompatActivity implements Spinner.OnItem
     /**
      * Envio del Pedido a WebService
      */
-    private void sendPedido() {
-        // Recogemos todos los valores.
-        String id = null;
-        String id_mesa = mesa.getId();
-        String fecha = " ";
-        String pagado = "0";
-        String estado = "cocina";
-        // HashMap para crear el objeto Json a enviar.
-        HashMap<String, String> map = new HashMap<>();
-        // Enviamos los datos para generar el pedido 'pedido' y las lineas de pedido 'comandas'
-        map.put("id", id);
-        map.put("id_user", id_camarero);
-        map.put("estado", estado);
-        map.put("pagado", pagado);
-        map.put("fecha", fecha);
-        map.put("id_mesa", id_mesa);
-        // Almacenamos todos los platos y los añadimos al HashMap con nomenglatura 'platoX : id_plato'
-        for(int i=0; i<platos.size(); i++) {
-            map.put("plato"+i, platos.get(i).getId());
-        }
-        map.put("num_platos", String.valueOf(platos.size()));
-        map.put("observaciones", etObservaciones.getText().toString());
-        map.put("cantidad", "1");
+    private class sendPedido extends AsyncTask<String, Void, Boolean> {
 
-        // Objeto JSON
-        JSONObject jobject = new JSONObject(map);
+        @Override
+        protected Boolean doInBackground(String... strings) {
+            // Recogemos todos los valores.
+            String id = null;
+            String id_mesa = mesa.getId();
+            String fecha = " ";
+            String pagado = "0";
+            String estado = "cocina";
+            // HashMap para crear el objeto Json a enviar.
+            HashMap<String, String> map = new HashMap<>();
+            // Enviamos los datos para generar el pedido 'pedido' y las lineas de pedido 'comandas'
+            map.put("id", id);
+            map.put("id_user", id_camarero);
+            map.put("estado", estado);
+            map.put("pagado", pagado);
+            map.put("fecha", fecha);
+            map.put("id_mesa", id_mesa);
+            // Almacenamos todos los platos y los añadimos al HashMap con nomenglatura 'platoX : id_plato'
+            for(int i=0; i<platos.size(); i++) {
+                map.put("plato"+i, platos.get(i).getId());
+            }
+            map.put("num_platos", String.valueOf(platos.size()));
+            map.put("observaciones", strings[0]);
+            map.put("cantidad", "1");
 
-        // Actualizar datos en el servidor
-        VolleySingleton.getInstance(ComandaActivity.this).addToRequestQueue(
-                new JsonObjectRequest(
-                        Request.Method.POST,
-                        URL_BASE + URL_INSERTAR,
-                        jobject,
-                        new Response.Listener<JSONObject>() {
-                            @Override
-                            public void onResponse(JSONObject response) {
-                                // Procesar la respuesta del servidor
-                                procesarRespuesta(response);
+            // Objeto JSON
+            JSONObject jobject = new JSONObject(map);
+
+            // Actualizar datos en el servidor
+            VolleySingleton.getInstance(ComandaActivity.this).addToRequestQueue(
+                    new JsonObjectRequest(
+                            Request.Method.POST,
+                            URL_BASE + ip_servidor + URL_INSERTAR,
+                            jobject,
+                            new Response.Listener<JSONObject>() {
+                                @Override
+                                public void onResponse(JSONObject response) {
+                                    // Procesar la respuesta del servidor
+                                    procesarRespuesta(response);
+                                }
+                            },
+                            new Response.ErrorListener() {
+                                @Override
+                                public void onErrorResponse(VolleyError error) {
+                                    Log.d("Comanda Activity ", "Error Volley: " + error.getMessage());
+                                }
                             }
-                        },
-                        new Response.ErrorListener() {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
-                                Log.d("Comanda Activity ", "Error Volley: " + error.getMessage());
-                            }
+                    ) {
+                        @Override
+                        public Map<String, String> getHeaders() {
+                            Map<String, String> headers = new HashMap<String, String>();
+                            headers.put("Content-Type", "application/json; charset=utf-8");
+                            headers.put("Accept", "application/json");
+                            return headers;
                         }
-                ) {
-                    @Override
-                    public Map<String, String> getHeaders() {
-                        Map<String, String> headers = new HashMap<String, String>();
-                        headers.put("Content-Type", "application/json; charset=utf-8");
-                        headers.put("Accept", "application/json");
-                        return headers;
+
+                        @Override
+                        public String getBodyContentType() {
+                            return "application/json; charset=utf-8" + getParamsEncoding();
+                        }
                     }
+            );
 
-                    @Override
-                    public String getBodyContentType() {
-                        return "application/json; charset=utf-8" + getParamsEncoding();
-                    }
-                }
-        );
+            return null;
+        }
 
-
+        @Override
+        protected void onPostExecute(Boolean result) {
+            try {
+                sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            super.onPostExecute(result);
+        }
     }
 
     private void procesarRespuesta(JSONObject response) {
