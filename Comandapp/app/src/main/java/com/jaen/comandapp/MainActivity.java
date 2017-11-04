@@ -9,10 +9,13 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -93,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
         adapter = new PedidoAdapter(this, id_camarero, ip_servidor);
         listView.setAdapter(adapter);
 
+
     }
 
     @Override
@@ -148,6 +152,7 @@ public class MainActivity extends AppCompatActivity {
             }
         } else {
             Log.d("MainActivity", "Pedido cancelado correctamente");
+
         }
     }
 
@@ -253,5 +258,27 @@ public class MainActivity extends AppCompatActivity {
             super.onPostExecute(result);
         }
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main_activity_menu, menu);
+        return true;
+
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        switch (item.getItemId()) {
+
+            case R.id.action_new:
+                Intent intent = new Intent(MainActivity.this, PlatoActivity.class );
+                startActivity(intent);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 }

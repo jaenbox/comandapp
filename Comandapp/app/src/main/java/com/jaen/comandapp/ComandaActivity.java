@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
-import android.print.PrintManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Html;
@@ -26,7 +25,6 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.jaen.comandapp.modelo.Mesa;
 import com.jaen.comandapp.modelo.Plato;
-import com.jaen.comandapp.util.MyPrintDocumentAdapter;
 import com.jaen.comandapp.util.PlatoAdapter;
 import com.jaen.comandapp.util.VolleySingleton;
 
@@ -36,11 +34,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
-import javax.xml.transform.Result;
-
 import static java.lang.Thread.sleep;
 
 public class ComandaActivity extends AppCompatActivity implements Spinner.OnItemSelectedListener{
@@ -138,20 +133,6 @@ public class ComandaActivity extends AppCompatActivity implements Spinner.OnItem
 
                 sendPedido send = new sendPedido();
                 send.execute(etObservaciones.getText().toString());
-
-                /*Recogido del pedido una vez almacenado*/
-                /*getLastPedido();
-
-                Log.d("Pedido tam ",String.valueOf(pedido.size()));
-
-                for(int i = 0; i < pedido.size(); i++){
-                    Log.d("Pedido ",pedido.get(i));
-                }
-                /* Impresion del ticket mediante google cloud print*/
-                /*
-                doPrint print = new doPrint();
-                print.execute();
-                */
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -252,7 +233,7 @@ public class ComandaActivity extends AppCompatActivity implements Spinner.OnItem
             Log.d("Pedido id ", j.getJSONObject(0).getString("id_pedido"));
             Log.d("Pedido mesa ", j.getJSONObject(0).getString("id_mesa"));
             Log.d("Pedido fecha ", j.getJSONObject(0).getString("fecha"));
-            //Adding the name of the student to array list
+            //Adding the name to array list
             pedido.add(json.getString("id_pedido"));
             pedido.add(json.getString("id_mesa"));
             pedido.add(json.getString("fecha"));
@@ -339,6 +320,7 @@ public class ComandaActivity extends AppCompatActivity implements Spinner.OnItem
             map.put("num_platos", String.valueOf(platos.size()));
             map.put("observaciones", strings[0]);
             map.put("cantidad", "1");
+            Log.d("LOG ", "COMANDA ACTYIVITY");
 
             // Objeto JSON
             JSONObject jobject = new JSONObject(map);
