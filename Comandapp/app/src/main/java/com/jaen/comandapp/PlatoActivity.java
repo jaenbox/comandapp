@@ -13,6 +13,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -81,6 +83,23 @@ public class PlatoActivity extends AppCompatActivity {
         btnSendPlato = (Button) findViewById(R.id.btnSendPlato);
 
         /* Spinner */
+        ArrayAdapter<CharSequence> spAdapter = ArrayAdapter.createFromResource(this, R.array.category_array, android.R.layout.simple_spinner_item);
+        spCategory.setAdapter(spAdapter);
+
+        spCategory.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
+
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                category = (String) adapterView.getItemAtPosition(i);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+                category = "al";
+            }
+        });
+
+        /* Button camera*/
         btnCamera.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -90,6 +109,7 @@ public class PlatoActivity extends AppCompatActivity {
             }
         });
 
+        /* Button de envio de datos */
         btnSendPlato.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -98,18 +118,28 @@ public class PlatoActivity extends AppCompatActivity {
                 name = etName.getText().toString();
                 price = etPrice.getText().toString();
                 description = etDescription.getText().toString();
-                category = "al";
-                sendPlato send = new sendPlato();
-                send.execute();
+                /*
+                Log.d("name ", name);
+                Log.d("price ", price);
+                Log.d("description ", description);
+                Log.d("category ", description);
+                Log.d("Imagen ", imgBase64);
+                */
+                if(name=="" | price=="" | description=="" | category=="" | photo== true) {
+                    sendPlato send = new sendPlato();
+                    send.execute();
 
-                // Enviar la foto.
+                    // Enviar la foto.
+                    if(photo) {
 
-                if(photo) {
+                        new Upload().execute();
+                    }
 
-                    new Upload().execute();
+                    finish(); // se cierra la activity.
+                } else {
+                    Toast.makeText(PlatoActivity.this, "Es necesario rellenar los campos", Toast.LENGTH_LONG).show();
                 }
 
-                finish(); // se cierra la activity.
             }
         });
 
@@ -134,7 +164,7 @@ public class PlatoActivity extends AppCompatActivity {
 
             // PHP // file_put_contents('img.png', base64_decode($_POST['imagen_base64']));
         } else {
-            Toast.makeText(PlatoActivity.this, "No se ha recogido imágen",Toast.LENGTH_LONG).show();
+            Toast.makeText(PlatoActivity.this, "No se ha recogido imagen",Toast.LENGTH_LONG).show();
             photo = false;
         }
 

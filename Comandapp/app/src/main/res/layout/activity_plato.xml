@@ -26,7 +26,7 @@
             android:layout_height="wrap_content"
             android:hint="Precio del plato"
             android:imeOptions="actionUnspecified"
-            android:inputType="text"
+            android:inputType="numberDecimal"
             android:maxLines="1"/>
 
     </android.support.design.widget.TextInputLayout>
